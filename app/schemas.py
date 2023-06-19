@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field, validator
-from datetime import datetime
+from datetime import datetime,date
 from typing import Optional, List
 from pydantic.types import conint
 
@@ -58,6 +58,12 @@ class TokenData(BaseModel):
 
 #     class Config:
 #         orm_mode = True
+class CommentsIn(BaseModel):
+    comments:str
+    likes:int
+    user_email:EmailStr
+    class Config:
+        orm_mode = True
 
 class Comments(BaseModel):
     id:Optional[int]
@@ -74,14 +80,15 @@ class Replies(BaseModel):
     reply:str
     likes:int
     user_email:EmailStr
-    replyTo: Optional[str]
+    replyname: Optional[str]
     class Config:
         orm_mode = True
 
 class PostDetails(BaseModel):
     created_at: datetime
-    question:str
-    title:str
+    content:str
+    team:str
+    name:str
     tags:list[str]
     likes:int
     owner_email:EmailStr
@@ -118,7 +125,7 @@ class CommentsOut1(BaseModel):
 
 class PostDetailsOut(PostDetails):
       id:int
-      comments:List[Comments]=[]
+      comment:List[Comments]=[]
     #   count:int
     #   answers:List[Answers]=[]
       
@@ -144,7 +151,8 @@ class PostDetailsOut2(BaseModel):
 class PostLike(BaseModel):
       user_email:EmailStr
       post_id:int
-      dir:conint(le=1)
+      postliked:bool
+    #   dir:conint(le=1)
       class Config:
         orm_mode = True 
 
@@ -178,16 +186,18 @@ class AzureUser(BaseModel):
 class CommentLike(BaseModel):
     comment_id:int
     user_email:EmailStr
-    dir:conint(le=1)
+    commentliked:bool
+    # dir:conint(le=1)
 
 class ReplyLike(BaseModel):
     reply_id:int
     user_email:EmailStr
-    dir:conint(le=1)
+    # dir:conint(le=1)
+    replyliked:bool
 
 class PostDetails1(BaseModel):
       id:int
-      title:str
+      name:str
       
 class Comments1(BaseModel):
     id:int
@@ -216,6 +226,14 @@ class UserHistory(BaseModel):
 
 
     # like_history: List[Like]
+
+class Announcements(BaseModel):
+    community:str
+    event_date:date
+    content:str
+    created_at: datetime
+    class Config:
+        orm_mode = True
 
 
 

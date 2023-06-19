@@ -67,10 +67,8 @@ def get_data(limit:int=10,pageNumber:int=0,db: Session = Depends(get_db)):
             'liked_users': liked_users,
             'comment_count': comment_count
         }
-      print("1",post_dict)
 
     for post_id, liked_users in post_dict.items():
-        print("2",comment_count)
         post = db.query(models.PostDetails).filter(models.PostDetails.id == post_id).first()
         count = db.query(models.PostDetails).count()
     
@@ -97,7 +95,6 @@ def get_data(limit:int=10,pageNumber:int=0,db: Session = Depends(get_db)):
 def get_data(post_id:int,db: Session = Depends(get_db)):
     items=db.query(models.PostDetails).filter(models.PostDetails.id==post_id).first()
     result=db.query(func.count(models.Comments.id)).outerjoin(models.PostDetails.comments).filter(models.Comments.postdetails_id==post_id).scalar()
-    # print(result)
     response=schemas.PostDetailsOut2(postdetails=items,total_posts=result)
     # raise exception
     if not items:
@@ -106,7 +103,7 @@ def get_data(post_id:int,db: Session = Depends(get_db)):
     return response
 
 @router.post("/comment", status_code=status.HTTP_201_CREATED)
-def create_comments(post_id:int,comment: schemas.Comments, db: Session = Depends(get_db)):
+def create_comments(post_id:int,comment: schemas.CommentsIn, db: Session = Depends(get_db)):
     new_comment = models.Comments(postdetails_id=post_id,**comment.dict())
     db.add(new_comment)
     db.commit()
@@ -130,7 +127,7 @@ def get_data(post_id:int,limit:int=10,pageNumber:int=0,db: Session = Depends(get
     comments_with_replies = []
     for comment in comments:
         replies = db.query(models.Replies).filter(models.Replies.comments_id == comment.id).all()
-        reply_list = [schemas.Replies(comments_id=reply.comments_id,likes=reply.likes,replyTo=reply.replyTo, reply=reply.reply, user_email=reply.user_email) for reply in replies]
+        reply_list = [schemas.Replies(comments_id=reply.comments_id,likes=reply.likes,replyname=reply.replyname, reply=reply.reply, user_email=reply.user_email) for reply in replies]
         comment_with_replies = schemas.CommentsOut1( comments=comment.comments,likes=comment.likes, user_email=comment.user_email, replies=reply_list[:2])
         comments_with_replies.append(comment_with_replies)
 
@@ -162,7 +159,7 @@ def postLike(vote:schemas.PostLike,db:Session= Depends (get_db)):
                             detail=f"Post with id: {vote.post_id} does not exist")
     vote_query=db.query(models.PostLike).filter(models.PostLike.post_id==vote.post_id,models.PostLike.user_email==vote.user_email)
     found_vote = vote_query.first()
-    if (vote.dir == 1):
+    if (vote.postliked == True):
         if found_vote:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT,
                                 detail=f"user {vote.user_email} has alredy liked on post {vote.post_id}")
@@ -191,7 +188,7 @@ def CommentLike(vote:schemas.CommentLike,db:Session= Depends (get_db)):
                             detail=f"Post with id: {vote.comment_id} does not exist")
     vote_query=db.query(models.CommentLike).filter(models.CommentLike.comment_id==vote.comment_id,models.CommentLike.user_email==vote.user_email)
     found_vote = vote_query.first()
-    if (vote.dir == 1):
+    if (vote.commentliked == True):
         if found_vote:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT,
                                 detail=f"user {vote.user_email} has alredy liked on comment {vote.comment_id}")
@@ -221,7 +218,7 @@ def ReplyLike(vote:schemas.ReplyLike,db:Session= Depends (get_db)):
                             detail=f"Post with id: {vote.reply_id} does not exist")
     vote_query=db.query(models.ReplyLike).filter(models.ReplyLike.reply_id==vote.reply_id,models.ReplyLike.user_email==vote.user_email)
     found_vote = vote_query.first()
-    if (vote.dir == 1):
+    if (vote.replyliked == True):
         if found_vote:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT,
                                 detail=f"user {vote.user_email} has alredy liked on reply {vote.reply_id}")
